@@ -120,7 +120,12 @@
   .add-act{display:flex;gap:8px;margin-top:8px}
   .add-act input{flex:1;border:1px solid var(--linea);border-radius:8px;padding:7px 10px;font-family:var(--font);font-size:13px}
   .add-act button{border:1px dashed var(--azul);background:#fff;color:var(--azul);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600}
-
+/* Controles exclusivos de administradora */
+body.rol-digitador .act .del,
+body.rol-digitador .ev-x,
+body.rol-digitador .add-act {
+  display: none !important;
+}
   /* ---------- Reporte ---------- */
   .rep-head{display:flex;align-items:center;gap:18px;padding:22px 24px;border-bottom:2px solid var(--azul)}
   .rep-head img{height:54px}
@@ -399,6 +404,25 @@ let estado = null;
 async function sesionActual(){ const { data } = await sb.auth.getSession(); return data.session; }
 async function iniciarSesion(email, pass){ return await sb.auth.signInWithPassword({ email: email, password: pass }); }
 async function cerrarSesion(){ await sb.auth.signOut(); }
+
+  async function aplicarRolUI(){
+  document.body.classList.remove('rol-digitador', 'rol-administradora');
+
+  try {
+    const { data, error } = await sb.rpc('obtener_rol_actual');
+    if (error) throw error;
+
+    const rol = String(data || '').trim();
+
+    if (rol === 'digitador') {
+      document.body.classList.add('rol-digitador');
+    } else if (rol === 'administradora') {
+      document.body.classList.add('rol-administradora');
+    }
+  } catch (error) {
+    console.error('No se pudo identificar el rol del usuario:', error);
+  }
+}
 
 // ---------- Carga del estado desde la nube ----------
 async function loadEstado(){
@@ -1119,6 +1143,7 @@ async function init(){
       const { error }=await iniciarSesion(email,pass);
       if(error){ errEl.textContent='No pudimos iniciar sesión. Revisa tu correo y contraseña.'; return; }
       document.getElementById('userEmail').textContent=email;
+      await aplicarRolUI();
       await arrancarApp();
     }catch(e){
       console.error(e);
@@ -1134,7 +1159,11 @@ async function init(){
   try{
     await conectarSupabase();
     const ses=await sesionActual();
-    if(ses){ document.getElementById('userEmail').textContent=(ses.user&&ses.user.email)||''; await arrancarApp(); }
+    if(ses){
+  document.getElementById('userEmail').textContent=(ses.user&&ses.user.email)||'';
+  await aplicarRolUI();
+  await arrancarApp();
+ }
   }catch(e){
     console.error(e);
     errEl.textContent='No se pudo cargar la conexión. Revisa tu internet y recarga la página.';
