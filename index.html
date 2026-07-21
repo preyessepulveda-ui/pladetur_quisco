@@ -315,6 +315,7 @@
       </div>
       <div class="user-chip">Sesión: <b id="userEmail"></b></div>
       <button class="btn" id="btnLogout">Cerrar sesión</button>
+      <button class="btn" id="btnCambiarClave">Cambiar contraseña</button>
     </div>
     <div class="actualizado no-print" id="actualizado"></div>
     <span class="guardado-flash no-print" id="guardadoFlash">✓ Guardado automáticamente</span>
@@ -1076,6 +1077,36 @@ async function init(){
   document.getElementById('selAnio').addEventListener('change',e=>{ estado.periodo.anio=parseInt(e.target.value,10); mostrarVista(document.querySelector('.vista.activa').id); });
   document.getElementById('selSem').addEventListener('change',e=>{ estado.periodo.sem=parseInt(e.target.value,10); mostrarVista(document.querySelector('.vista.activa').id); });
   document.getElementById('btnLogout').addEventListener('click',async()=>{ try{ await cerrarSesion(); }catch(e){} estado=null; mostrarLogin(); });
+  document.getElementById('btnCambiarClave').addEventListener('click', async () => {
+  const nuevaClave = prompt('Ingresa tu nueva contraseña. Debe tener al menos 8 caracteres:');
+  if (!nuevaClave) return;
+
+  if (nuevaClave.length < 8) {
+    alert('La contraseña debe tener al menos 8 caracteres.');
+    return;
+  }
+
+  const confirmarClave = prompt('Confirma nuevamente la contraseña:');
+  if (nuevaClave !== confirmarClave) {
+    alert('Las contraseñas no coinciden.');
+    return;
+  }
+
+  try {
+    if (!sb) await conectarSupabase();
+
+    const { error } = await sb.auth.updateUser({
+      password: nuevaClave
+    });
+
+    if (error) throw error;
+
+    alert('La contraseña fue actualizada correctamente.');
+  } catch (error) {
+    console.error(error);
+    alert('No fue posible cambiar la contraseña: ' + error.message);
+  }
+});
 
   const errEl=document.getElementById('loginErr');
   const doLogin=async()=>{
